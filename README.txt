@@ -85,7 +85,7 @@ local function MakeDraggable(topbarobject, object)
     )
 end
 
-function lib:Window(text, preset, closebind) 
+function lib:Window(text, preset, closebind)
     CloseBind = closebind or Enum.KeyCode.RightControl
     PresetColor = preset or Color3.fromRGB(44, 120, 224)
     fs = false
@@ -181,11 +181,11 @@ function lib:Window(text, preset, closebind)
         PresetColor = toch
     end
 
-function lib:Destroy()
-    for _, item in pairs(TabFolder:GetChildren()) do 
-        item:Destroy()
+    function lib:Destroy()
+        for _, item in pairs(TabFolder:GetChildren()) do 
+            item:Destroy()
+        end
     end
-end
 
     function lib:Notification(texttitle, textdesc, textbtn)
         local NotificationHold = Instance.new("TextButton")
