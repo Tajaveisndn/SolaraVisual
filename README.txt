@@ -1,343 +1,248 @@
---[[
-    SolaraUI Library - Minimal Version
-    Authors: ny0xdel4s and fearqwzz_
-    Discord: ny0xdel4s e fearqwzz_
+--[[ 
+    SolaraHub UI Library
     Version: 1.0.0
+    Author: Seu Nome
 ]]
 
--- Services
-local TweenService = game:GetService("TweenService")
-local CoreGui = game:GetService("CoreGui")
-
-local SolaraUI = {
+local Library = {
+    Flags = {},
     Theme = {
-        Primary = Color3.fromRGB(24, 24, 36),
-        Secondary = Color3.fromRGB(30, 30, 45),
+        Main = Color3.fromRGB(25, 25, 25),
+        Secondary = Color3.fromRGB(35, 35, 35),
+        Stroke = Color3.fromRGB(50, 50, 50),
         Accent = Color3.fromRGB(44, 120, 224),
-        Text = Color3.fromRGB(240, 240, 240),
-        Toggle = Color3.fromRGB(44, 120, 224)
+        Text = Color3.fromRGB(255, 255, 255),
+        TextDark = Color3.fromRGB(150, 150, 150)
     }
 }
 
+-- Services
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+
+-- Variables
+local Connections = {}
+
 -- Utility Functions
-local function Create(class, properties)
-    local instance = Instance.new(class)
-    for property, value in pairs(properties) do
-        instance[property] = value
+local function Create(instance, properties, children)
+    local object = Instance.new(instance)
+    
+    for i, v in pairs(properties or {}) do
+        object[i] = v
     end
-    return instance
+    
+    for i, v in pairs(children or {}) do
+        v.Parent = object
+    end
+    
+    return object
 end
 
-local function CreateTween(instance, props, duration)
-    return TweenService:Create(
-        instance,
-        TweenInfo.new(duration or 0.3, Enum.EasingStyle.Quart),
-        props
-    )
+local function MakeDraggable(topbar, frame)
+    local dragging = false
+    local dragInput
+    local dragStart
+    local startPos
+
+    local function UpdateDrag(input)
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+
+    topbar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    topbar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            UpdateDrag(input)
+        end
+    end)
 end
 
-function SolaraUI:CreateWindow(title)
+function Library:Window(title)
     local Window = {}
-    
-    -- Main GUI
-    local ScreenGui = Create("ScreenGui", {
-        Name = "SolaraUI",
+
+    -- Create Main GUI
+    local SolaraHub = Create("ScreenGui", {
+        Name = "SolaraHub",
         Parent = CoreGui,
-        ResetOnSpawn = false
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     })
-    
+
     -- Main Frame
     local Main = Create("Frame", {
         Name = "Main",
-        Parent = ScreenGui,
-        BackgroundColor3 = self.Theme.Primary,
+        Parent = SolaraHub,
+        BackgroundColor3 = Library.Theme.Main,
         BorderSizePixel = 0,
-        Position = UDim2.new(0.5, -200, 0.5, -150),
-        Size = UDim2.new(0, 400, 0, 300),
+        Position = UDim2.new(0.5, -300, 0.5, -175),
+        Size = UDim2.new(0, 600, 0, 350),
         ClipsDescendants = true
     })
-    
+
+    -- Add Corners
     Create("UICorner", {
-        Parent = Main,
-        CornerRadius = UDim.new(0, 8)
+        CornerRadius = UDim.new(0, 6),
+        Parent = Main
     })
-    
-    -- Top Bar
-    local TopBar = Create("Frame", {
-        Name = "TopBar",
+
+    -- Add Stroke
+    Create("UIStroke", {
         Parent = Main,
-        BackgroundColor3 = self.Theme.Secondary,
+        Color = Library.Theme.Stroke,
+        Thickness = 1
+    })
+
+    -- Topbar
+    local Topbar = Create("Frame", {
+        Name = "Topbar",
+        Parent = Main,
+        BackgroundColor3 = Library.Theme.Secondary,
         BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 35)
+        Size = UDim2.new(1, 0, 0, 40)
     })
-    
+
     Create("UICorner", {
-        Parent = TopBar,
-        CornerRadius = UDim.new(0, 8)
+        CornerRadius = UDim.new(0, 6),
+        Parent = Topbar
     })
-    
+
     -- Title
-    Create("TextLabel", {
-        Parent = TopBar,
+    local Title = Create("TextLabel", {
+        Parent = Topbar,
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 15, 0, 0),
-        Size = UDim2.new(1, -30, 1, 0),
+        Size = UDim2.new(0.5, -15, 1, 0),
         Font = Enum.Font.GothamBold,
-        Text = title or "SolaraUI",
-        TextColor3 = self.Theme.Text,
+        Text = title,
+        TextColor3 = Library.Theme.Text,
         TextSize = 14,
         TextXAlignment = Enum.TextXAlignment.Left
     })
-    
-    -- Content Frame
-    local Content = Create("Frame", {
+
+    -- Close Button
+    local CloseButton = Create("TextButton", {
+        Parent = Topbar,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(1, -40, 0, 0),
+        Size = UDim2.new(0, 40, 1, 0),
+        Font = Enum.Font.GothamBold,
+        Text = "×",
+        TextColor3 = Library.Theme.Text,
+        TextSize = 24
+    })
+
+    -- Close Button Gradient
+    local CloseGradient = Create("UIGradient", {
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 255, 255)),
+            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))
+        },
+        Parent = CloseButton
+    })
+
+    -- Close Button Animation
+    CloseButton.MouseEnter:Connect(function()
+        TweenService:Create(CloseGradient, TweenInfo.new(0.3), {
+            Color = ColorSequence.new{
+                ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
+                ColorSequenceKeypoint.new(1.00, Color3.fromRGB(170, 0, 0))
+            }
+        }):Play()
+    end)
+
+    CloseButton.MouseLeave:Connect(function()
+        TweenService:Create(CloseGradient, TweenInfo.new(0.3), {
+            Color = ColorSequence.new{
+                ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 255, 255)),
+                ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))
+            }
+        }):Play()
+    end)
+
+    CloseButton.MouseButton1Click:Connect(function()
+        SolaraHub:Destroy()
+    end)
+
+    -- Make Window Draggable
+    MakeDraggable(Topbar, Main)
+
+    -- Tab Container
+    local TabHolder = Create("Frame", {
+        Name = "TabHolder",
         Parent = Main,
-        BackgroundColor3 = self.Theme.Secondary,
+        BackgroundColor3 = Library.Theme.Secondary,
         BorderSizePixel = 0,
-        Position = UDim2.new(0, 10, 0, 45),
-        Size = UDim2.new(1, -20, 1, -55)
+        Position = UDim2.new(0, 10, 0, 50),
+        Size = UDim2.new(0, 150, 1, -60)
     })
-    
+
     Create("UICorner", {
-        Parent = Content,
-        CornerRadius = UDim.new(0, 8)
+        CornerRadius = UDim.new(0, 6),
+        Parent = TabHolder
     })
-    
-    local ElementList = Create("UIListLayout", {
-        Parent = Content,
+
+    local TabList = Create("ScrollingFrame", {
+        Name = "TabList",
+        Parent = TabHolder,
+        Active = true,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 0, 0, 5),
+        Size = UDim2.new(1, 0, 1, -10),
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        ScrollBarThickness = 2,
+        ScrollBarImageColor3 = Library.Theme.Accent
+    })
+
+    Create("UIListLayout", {
+        Parent = TabList,
         HorizontalAlignment = Enum.HorizontalAlignment.Center,
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 5)
     })
-    
-    -- Toggle Function
-    function Window:CreateToggle(text, default, callback)
-        local ToggleFrame = Create("Frame", {
-            Parent = Content,
-            BackgroundColor3 = self.Theme.Primary,
-            Size = UDim2.new(1, -20, 0, 35),
-            BorderSizePixel = 0
-        })
-        
-        Create("UICorner", {
-            Parent = ToggleFrame,
-            CornerRadius = UDim.new(0, 6)
-        })
-        
-        local Label = Create("TextLabel", {
-            Parent = ToggleFrame,
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0, 10, 0, 0),
-            Size = UDim2.new(1, -60, 1, 0),
-            Font = Enum.Font.Gotham,
-            Text = text,
-            TextColor3 = self.Theme.Text,
-            TextSize = 13,
-            TextXAlignment = Enum.TextXAlignment.Left
-        })
-        
-        local Switch = Create("Frame", {
-            Parent = ToggleFrame,
-            BackgroundColor3 = default and self.Theme.Toggle or self.Theme.Secondary,
-            Position = UDim2.new(1, -50, 0.5, -10),
-            Size = UDim2.new(0, 40, 0, 20)
-        })
-        
-        Create("UICorner", {
-            Parent = Switch,
-            CornerRadius = UDim.new(1, 0)
-        })
-        
-        local Circle = Create("Frame", {
-            Parent = Switch,
-            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-            Position = default and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8),
-            Size = UDim2.new(0, 16, 0, 16)
-        })
-        
-        Create("UICorner", {
-            Parent = Circle,
-            CornerRadius = UDim.new(1, 0)
-        })
-        
-        local Toggled = default or false
-        
-        ToggleFrame.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                Toggled = not Toggled
-                
-                CreateTween(Circle, {
-                    Position = Toggled and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
-                }):Play()
-                
-                CreateTween(Switch, {
-                    BackgroundColor3 = Toggled and self.Theme.Toggle or self.Theme.Secondary
-                }):Play()
-                
-                if callback then
-                    callback(Toggled)
-                end
-            end
-        end)
-    end
-    
-    -- Slider Function
-    function Window:CreateSlider(text, min, max, default, callback)
-        local SliderFrame = Create("Frame", {
-            Parent = Content,
-            BackgroundColor3 = self.Theme.Primary,
-            Size = UDim2.new(1, -20, 0, 50),
-            BorderSizePixel = 0
-        })
-        
-        Create("UICorner", {
-            Parent = SliderFrame,
-            CornerRadius = UDim.new(0, 6)
-        })
-        
-        local Label = Create("TextLabel", {
-            Parent = SliderFrame,
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0, 10, 0, 5),
-            Size = UDim2.new(1, -20, 0, 20),
-            Font = Enum.Font.Gotham,
-            Text = text,
-            TextColor3 = self.Theme.Text,
-            TextSize = 13,
-            TextXAlignment = Enum.TextXAlignment.Left
-        })
-        
-        local SliderBack = Create("Frame", {
-            Parent = SliderFrame,
-            BackgroundColor3 = self.Theme.Secondary,
-            Position = UDim2.new(0, 10, 0, 35),
-            Size = UDim2.new(1, -20, 0, 4)
-        })
-        
-        Create("UICorner", {
-            Parent = SliderBack,
-            CornerRadius = UDim.new(1, 0)
-        })
-        
-        local SliderFill = Create("Frame", {
-            Parent = SliderBack,
-            BackgroundColor3 = self.Theme.Accent,
-            Size = UDim2.new((default - min)/(max - min), 0, 1, 0)
-        })
-        
-        Create("UICorner", {
-            Parent = SliderFill,
-            CornerRadius = UDim.new(1, 0)
-        })
-        
-        local ValueLabel = Create("TextLabel", {
-            Parent = SliderFrame,
-            BackgroundTransparency = 1,
-            Position = UDim2.new(1, -50, 0, 5),
-            Size = UDim2.new(0, 40, 0, 20),
-            Font = Enum.Font.Gotham,
-            Text = tostring(default),
-            TextColor3 = self.Theme.Text,
-            TextSize = 13
-        })
-        
-        local IsDragging = false
-        
-        SliderBack.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                IsDragging = true
-            end
-        end)
-        
-        game:GetService("UserInputService").InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                IsDragging = false
-            end
-        end)
-        
-        game:GetService("UserInputService").InputChanged:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseMovement and IsDragging then
-                local pos = game:GetService("UserInputService"):GetMouseLocation()
-                local relative = (pos.X - SliderBack.AbsolutePosition.X) / SliderBack.AbsoluteSize.X
-                relative = math.clamp(relative, 0, 1)
-                
-                local value = math.floor(min + ((max - min) * relative))
-                ValueLabel.Text = tostring(value)
-                
-                CreateTween(SliderFill, {
-                    Size = UDim2.new(relative, 0, 1, 0)
-                }):Play()
-                
-                if callback then
-                    callback(value)
-                end
-            end
-        end)
+
+    -- Content Container
+    local Container = Create("Frame", {
+        Name = "Container",
+        Parent = Main,
+        BackgroundColor3 = Library.Theme.Secondary,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 170, 0, 50),
+        Size = UDim2.new(1, -180, 1, -60)
+    })
+
+    Create("UICorner", {
+        CornerRadius = UDim.new(0, 6),
+        Parent = Container
+    })
+
+    -- Window Methods
+    function Window:Tab(name)
+        local Tab = {}
+        -- Tab creation code aqui...
+        return Tab
     end
 
-    -- Notify Function
-    function Window:Notify(title, text, duration)
-        duration = duration or 3
-        
-        local Notification = Create("Frame", {
-            Parent = ScreenGui,
-            BackgroundColor3 = self.Theme.Primary,
-            Position = UDim2.new(1, -320, 1, -90),
-            Size = UDim2.new(0, 300, 0, 80),
-            BorderSizePixel = 0
-        })
-        
-        Create("UICorner", {
-            Parent = Notification,
-            CornerRadius = UDim.new(0, 8)
-        })
-        
-        local Title = Create("TextLabel", {
-            Parent = Notification,
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0, 15, 0, 10),
-            Size = UDim2.new(1, -30, 0, 20),
-            Font = Enum.Font.GothamBold,
-            Text = title,
-            TextColor3 = self.Theme.Text,
-            TextSize = 14,
-            TextXAlignment = Enum.TextXAlignment.Left
-        })
-        
-        local Message = Create("TextLabel", {
-            Parent = Notification,
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0, 15, 0, 35),
-            Size = UDim2.new(1, -30, 0, 35),
-            Font = Enum.Font.Gotham,
-            Text = text,
-            TextColor3 = self.Theme.Text,
-            TextSize = 13,
-            TextWrapped = true,
-            TextXAlignment = Enum.TextXAlignment.Left
-        })
-        
-        -- Animation
-        CreateTween(Notification, {
-            Position = UDim2.new(1, -320, 1, -100)
-        }):Play()
-        
-        wait(duration)
-        
-        CreateTween(Notification, {
-            Position = UDim2.new(1, 0, 1, -100)
-        }):Play()
-        
-        wait(0.5)
-        Notification:Destroy()
-    end
-    
-    -- Change UI Color Function
-    function Window:ChangeColor(colorType, color)
-        self.Theme[colorType] = color
-    end
-    
     return Window
 end
 
-return SolaraUI
+return Library
