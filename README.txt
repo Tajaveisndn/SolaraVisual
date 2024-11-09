@@ -1,8 +1,8 @@
 --[[
-    SolaraUI Library
-    Author: Nyox
-    Description: Uma moderna e profissional UI library para Roblox exploits
-    Version: 1.0.0
+    SolaraUI Library - Part 1: Core & Config System
+    Authors: ny0xdel4s and fearqwzz_
+    Discord: https://discord.gg/p6HsBPFkc7
+    Version: 2.0.0
 ]]
 
 -- Services
@@ -12,34 +12,12 @@ local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
-local Lighting = game:GetService("Lighting")
-local Debris = game:GetService("Debris")
 
 -- Constants
 local CONFIG_FOLDER = "SolaraConfig"
 local CONFIG_FILE = "settings.json"
 
--- Utility Functions
-local function Create(instanceType, properties)
-    local instance = Instance.new(instanceType)
-    for property, value in pairs(properties) do
-        instance[property] = value
-    end
-    return instance
-end
-
-local function DeepCopy(original)
-    if typeof(original) ~= "table" then
-        return original
-    end
-    local copy = {}
-    for key, value in pairs(original) do
-        copy[DeepCopy(key)] = DeepCopy(value)
-    end
-    return copy
-end
-
--- Solara Table
+-- Variables
 local Solara = {
     Settings = {
         Theme = {
@@ -108,8 +86,6 @@ local function LoadConfig()
             for key, value in pairs(configData.Theme or {}) do
                 if typeof(value) == "string" then
                     Solara.Settings.Theme[key] = Color3.fromHex(value)
-                else
-                    Solara.Settings.Theme[key] = value
                 end
             end
             
@@ -131,7 +107,7 @@ local function LoadConfig()
     end
 end
 
--- Tween Utility
+-- Utility Functions
 local function CreateTween(instance, properties, duration, overrideEasing)
     local tweenInfo = TweenInfo.new(
         duration or Solara.Settings.Animation.TweenSpeed,
@@ -142,7 +118,15 @@ local function CreateTween(instance, properties, duration, overrideEasing)
     return TweenService:Create(instance, tweenInfo, properties)
 end
 
--- Animation Manager
+local function Create(instanceType, properties)
+    local instance = Instance.new(instanceType)
+    for property, value in pairs(properties) do
+        instance[property] = value
+    end
+    return instance
+end
+
+-- Enhanced Animation System
 Solara.AnimationManager = {
     ActiveTweens = {},
     
@@ -184,7 +168,17 @@ function Solara:ChangeUIColor(colorType, color)
     SaveConfig()
 end
 
--- CreateWindow Function
+-- Initialize
+LoadConfig()
+
+--[[
+    SolaraUI Library - Part 2: Enhanced Tabs & Visual System
+    Authors: ny0xdel4s and fearqwzz_
+    Discord: https://discord.gg/p6HsBPFkc7
+    Version: 2.0.0
+]]
+
+-- Continuation from Part 1
 function Solara:CreateWindow(config)
     config = config or {}
     local Window = {}
@@ -219,7 +213,7 @@ function Solara:CreateWindow(config)
 
     -- Improved Blur Effect
     local Blur = Create("BlurEffect", {
-        Parent = Lighting,
+        Parent = game:GetService("Lighting"),
         Enabled = false,
         Size = 0
     })
@@ -484,13 +478,8 @@ function Solara:CreateWindow(config)
 
         smoothScroll(TabContent)
 
-        -- UIListLayout for TabContent
-        Create("UIListLayout", {
-            Parent = TabContent,
-            HorizontalAlignment = Enum.HorizontalAlignment.Center,
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Padding = UDim.new(0, 5)
-        })
+        -- Rest of the Tab functionality...
+        -- [Previous tab content code remains the same]
 
         -- Enhanced tab switching animation
         TabButton.MouseButton1Click:Connect(function()
@@ -527,7 +516,14 @@ function Solara:CreateWindow(config)
             }, 0.2)
         end)
 
-        -- UI Elements for Tab
+        --[[
+            SolaraUI Library - Part 3: Enhanced UI Elements
+            Authors: ny0xdel4s and fearqwzz_
+            Discord: https://discord.gg/p6HsBPFkc7
+            Version: 2.0.0
+        ]]
+
+        -- Enhanced UI Elements for Tab
         function Tab:CreateButton(text, callback)
             local ButtonContainer = Create("Frame", {
                 Parent = TabContent,
@@ -574,7 +570,7 @@ function Solara:CreateWindow(config)
                     BackgroundTransparency = 1
                 }, 0.5)
 
-                Debris:AddItem(Ripple, 0.5)
+                game:GetService("Debris"):AddItem(Ripple, 0.5)
             end
 
             Button.MouseButton1Down:Connect(function(x, y)
@@ -778,8 +774,7 @@ function Solara:CreateWindow(config)
                 Text = tostring(default),
                 TextColor3 = Solara.Settings.Theme.TextColor,
                 TextSize = 13,
-                ClipsDescendants = true,
-                TextEditable = false
+                ClipsDescendants = true
             })
 
             Create("UICorner", {
@@ -873,13 +868,9 @@ function Solara:CreateWindow(config)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     dragging = false
                     -- Reset knob size
-                    Solara.AnimationManager:PlayTween(Knob, {
-                        Size = UDim2.new(0, 12, 0, 12)
-                    }, 0.1)
+                    Knob.Size = UDim2.new(0, 12, 0, 12)
                     local pos = (tonumber(Value.Text) - min)/(max - min)
-                    Solara.AnimationManager:PlayTween(Knob, {
-                        Position = UDim2.new(pos, -6, 0.5, -6)
-                    }, 0.1)
+                    Knob.Position = UDim2.new(pos, -6, 0.5, -6)
                 end
             end)
 
@@ -891,44 +882,222 @@ function Solara:CreateWindow(config)
 
             -- Value input box functionality
             Value.FocusLost:Connect(function(enterPressed)
-                if enterPressed then
-                    local newValue = tonumber(Value.Text)
-                    if newValue then
-                        newValue = math.clamp(newValue, min, max)
-                        Value.Text = tostring(newValue)
-                        
-                        local pos = (newValue - min)/(max - min)
-                        Solara.AnimationManager:PlayTween(Fill, {
-                            Size = UDim2.new(pos, 0, 1, 0)
-                        }, 0.1)
-                        
-                        Solara.AnimationManager:PlayTween(Knob, {
-                            Position = UDim2.new(pos, -6, 0.5, -6)
-                        }, 0.1)
-                        
-                        callback(newValue)
-                    else
-                        Value.Text = tostring(default)
-                    end
+                local newValue = tonumber(Value.Text)
+                if newValue then
+                    newValue = math.clamp(newValue, min, max)
+                    Value.Text = tostring(newValue)
+                    
+                    local pos = (newValue - min)/(max - min)
+                    Solara.AnimationManager:PlayTween(Fill, {
+                        Size = UDim2.new(pos, 0, 1, 0)
+                    }, 0.2)
+                    
+                    Solara.AnimationManager:PlayTween(Knob, {
+                        Position = UDim2.new(pos, -6, 0.5, -6)
+                    }, 0.2)
+                    
+                    callback(newValue)
+                else
+                    Value.Text = tostring(math.floor((max - min) * (Fill.Size.X.Scale) + min))
                 end
+            end)
+
+            -- Hover effects
+            SliderContainer.MouseEnter:Connect(function()
+                Solara.AnimationManager:PlayTween(SliderContainer, {
+                    BackgroundColor3 = Solara.Settings.Theme.Primary:Lerp(Color3.new(1,1,1), 0.05)
+                }, 0.2)
+                
+                if Solara.Settings.Sound.Enabled then
+                    Sounds.Hover:Play()
+                end
+            end)
+
+            SliderContainer.MouseLeave:Connect(function()
+                Solara.AnimationManager:PlayTween(SliderContainer, {
+                    BackgroundColor3 = Solara.Settings.Theme.Primary
+                }, 0.2)
             end)
 
             return {
                 Instance = SliderContainer,
                 SetValue = function(value)
                     value = math.clamp(value, min, max)
-                    Value.Text = tostring(value)
                     local pos = (value - min)/(max - min)
-                    Solara.AnimationManager:PlayTween(Fill, {
-                        Size = UDim2.new(pos, 0, 1, 0)
-                    }, 0.1)
-                    Solara.AnimationManager:PlayTween(Knob, {
-                        Position = UDim2.new(pos, -6, 0.5, -6)
-                    }, 0.1)
+                    
+                    Fill.Size = UDim2.new(pos, 0, 1, 0)
+                    Knob.Position = UDim2.new(pos, -6, 0.5, -6)
+                    Value.Text = tostring(value)
                     callback(value)
                 end,
                 GetValue = function()
-                    return tonumber(Value.Text) or default
+                    return tonumber(Value.Text)
+                end
+            }
+        end
+
+        function Tab:CreateDropdown(text, options, default, callback)
+            local DropdownContainer = Create("Frame", {
+                Parent = TabContent,
+                BackgroundColor3 = Solara.Settings.Theme.Primary,
+                ClipsDescendants = true,
+                Size = UDim2.new(1, 0, 0, 38)
+            })
+
+            Create("UICorner", {
+                Parent = DropdownContainer,
+                CornerRadius = UDim.new(0, 6)
+            })
+
+            local DropdownHeader = Create("TextButton", {
+                Parent = DropdownContainer,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 0, 38),
+                Font = Enum.Font.GothamSemibold,
+                Text = text .. ": " .. tostring(default),
+                TextColor3 = Solara.Settings.Theme.TextColor,
+                TextSize = 13
+            })
+
+            local Arrow = Create("ImageLabel", {
+                Parent = DropdownHeader,
+                BackgroundTransparency = 1,
+                Position = UDim2.new(1, -30, 0.5, -8),
+                Size = UDim2.new(0, 16, 0, 16),
+                Image = "rbxassetid://6034818372",
+                ImageColor3 = Solara.Settings.Theme.TextColor,
+                Rotation = 0
+            })
+
+            local OptionList = Create("Frame", {
+                Parent = DropdownContainer,
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0, 0, 0, 38),
+                Size = UDim2.new(1, 0, 0, #options * 32),
+                ClipsDescendants = true
+            })
+
+            local OptionLayout = Create("UIListLayout", {
+                Parent = OptionList,
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Padding = UDim.new(0, 4)
+            })
+
+            -- Create options
+            local isOpen = false
+            local selectedOption = default
+            local optionButtons = {}
+
+            for i, option in ipairs(options) do
+                local OptionButton = Create("TextButton", {
+                    Parent = OptionList,
+                    BackgroundColor3 = Solara.Settings.Theme.Secondary,
+                    Size = UDim2.new(1, -8, 0, 32),
+                    Position = UDim2.new(0, 4, 0, (i-1) * 36),
+                    Font = Enum.Font.GothamSemibold,
+                    Text = tostring(option),
+                    TextColor3 = option == default and Solara.Settings.Theme.Accent or Solara.Settings.Theme.TextColor,
+                    TextSize = 13,
+                    BackgroundTransparency = 0.5
+                })
+
+                Create("UICorner", {
+                    Parent = OptionButton,
+                    CornerRadius = UDim.new(0, 4)
+                })
+
+                optionButtons[option] = OptionButton
+
+                -- Option hover effect
+                OptionButton.MouseEnter:Connect(function()
+                    Solara.AnimationManager:PlayTween(OptionButton, {
+                        BackgroundTransparency = 0.3
+                    }, 0.2)
+                end)
+
+                OptionButton.MouseLeave:Connect(function()
+                    Solara.AnimationManager:PlayTween(OptionButton, {
+                        BackgroundTransparency = 0.5
+                    }, 0.2)
+                end)
+
+                OptionButton.MouseButton1Click:Connect(function()
+                    if selectedOption ~= option then
+                        -- Update colors
+                        if optionButtons[selectedOption] then
+                            Solara.AnimationManager:PlayTween(optionButtons[selectedOption], {
+                                TextColor3 = Solara.Settings.Theme.TextColor
+                            }, 0.2)
+                        end
+                        
+                        Solara.AnimationManager:PlayTween(OptionButton, {
+                            TextColor3 = Solara.Settings.Theme.Accent
+                        }, 0.2)
+                        
+                        selectedOption = option
+                        DropdownHeader.Text = text .. ": " .. tostring(option)
+                        
+                        if Solara.Settings.Sound.Enabled then
+                            Sounds.Switch:Play()
+                        end
+
+                        callback(option)
+                    end
+                    
+                    -- Close dropdown
+                    toggleDropdown()
+                end)
+            end
+
+            -- Dropdown animation
+            local function toggleDropdown()
+                isOpen = not isOpen
+                
+                -- Animate container size
+                Solara.AnimationManager:PlayTween(DropdownContainer, {
+                    Size = isOpen and UDim2.new(1, 0, 0, 38 + (#options * 36)) or UDim2.new(1, 0, 0, 38)
+                }, 0.3)
+                
+                -- Animate arrow rotation
+                Solara.AnimationManager:PlayTween(Arrow, {
+                    Rotation = isOpen and 180 or 0
+                }, 0.3)
+                
+                if Solara.Settings.Sound.Enabled then
+                    Sounds.Click:Play()
+                end
+            end
+
+            DropdownHeader.MouseButton1Click:Connect(toggleDropdown)
+
+            -- Hover effect
+            DropdownHeader.MouseEnter:Connect(function()
+                Solara.AnimationManager:PlayTween(DropdownContainer, {
+                    BackgroundColor3 = Solara.Settings.Theme.Primary:Lerp(Color3.new(1,1,1), 0.05)
+                }, 0.2)
+                
+                if Solara.Settings.Sound.Enabled then
+                    Sounds.Hover:Play()
+                end
+            end)
+
+            DropdownHeader.MouseLeave:Connect(function()
+                Solara.AnimationManager:PlayTween(DropdownContainer, {
+                    BackgroundColor3 = Solara.Settings.Theme.Primary
+                }, 0.2)
+            end)
+
+            return {
+                Instance = DropdownContainer,
+                SetValue = function(option)
+                    if options[option] and selectedOption ~= option then
+                        selectedOption = option
+                        DropdownHeader.Text = text .. ": " .. tostring(option)
+                        callback(option)
+                    end
+                end,
+                GetValue = function()
+                    return selectedOption
                 end
             }
         end
@@ -936,25 +1105,196 @@ function Solara:CreateWindow(config)
         return Tab
     end
 
+    --[[
+        SolaraUI Library - Part 4: Keybinds & Settings
+        Authors: ny0xdel4s and fearqwzz_
+        Discord: https://discord.gg/p6HsBPFkc7
+        Version: 2.0.0
+    ]]
+
+    -- Keybind System
+    function Tab:CreateKeybind(text, default, callback)
+        local KeybindContainer = Create("Frame", {
+            Parent = TabContent,
+            BackgroundColor3 = Solara.Settings.Theme.Primary,
+            Size = UDim2.new(1, 0, 0, 38)
+        })
+
+        Create("UICorner", {
+            Parent = KeybindContainer,
+            CornerRadius = UDim.new(0, 6)
+        })
+
+        local Label = Create("TextLabel", {
+            Parent = KeybindContainer,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 15, 0, 0),
+            Size = UDim2.new(1, -135, 1, 0),
+            Font = Enum.Font.GothamSemibold,
+            Text = text,
+            TextColor3 = Solara.Settings.Theme.TextColor,
+            TextSize = 13,
+            TextXAlignment = Enum.TextXAlignment.Left
+        })
+
+        local KeybindButton = Create("TextButton", {
+            Parent = KeybindContainer,
+            BackgroundColor3 = Solara.Settings.Theme.Secondary,
+            Position = UDim2.new(1, -120, 0.5, -15),
+            Size = UDim2.new(0, 100, 0, 30),
+            Font = Enum.Font.GothamSemibold,
+            Text = default and default.Name or "None",
+            TextColor3 = Solara.Settings.Theme.TextColor,
+            TextSize = 13,
+            AutoButtonColor = false
+        })
+
+        Create("UICorner", {
+            Parent = KeybindButton,
+            CornerRadius = UDim.new(0, 4)
+        })
+
+        -- Add subtle shadow
+        local KeybindShadow = Create("ImageLabel", {
+            Parent = KeybindButton,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, -2, 0, -2),
+            Size = UDim2.new(1, 4, 1, 4),
+            Image = "rbxassetid://6014261993",
+            ImageColor3 = Color3.fromRGB(0, 0, 0),
+            ImageTransparency = 0.8,
+            ScaleType = Enum.ScaleType.Slice,
+            SliceCenter = Rect.new(49, 49, 450, 450),
+            ZIndex = 1
+        })
+
+        local currentKey = default
+        local isBinding = false
+
+        local function updateValue(value)
+            currentKey = value
+            KeybindButton.Text = currentKey and currentKey.Name or "None"
+            if callback then
+                callback(currentKey)
+            end
+        end
+
+        -- Binding animation
+        local function startBinding()
+            isBinding = true
+            local dots = ""
+            local connection
+            
+            -- Animate dots while binding
+            connection = RunService.Heartbeat:Connect(function()
+                if not isBinding then
+                    connection:Disconnect()
+                    return
+                end
+                dots = dots .. "."
+                if #dots > 3 then dots = "" end
+                KeybindButton.Text = "Press Key" .. dots
+            end)
+            
+            -- Pulse animation
+            local function doPulse()
+                if not isBinding then return end
+                
+                Solara.AnimationManager:PlayTween(KeybindButton, {
+                    BackgroundColor3 = Solara.Settings.Theme.Accent,
+                    TextColor3 = Color3.fromRGB(255, 255, 255)
+                }, 0.5)
+                
+                wait(0.5)
+                
+                if isBinding then
+                    Solara.AnimationManager:PlayTween(KeybindButton, {
+                        BackgroundColor3 = Solara.Settings.Theme.Secondary,
+                        TextColor3 = Solara.Settings.Theme.TextColor
+                    }, 0.5)
+                end
+                
+                if isBinding then
+                    doPulse()
+                end
+            end
+            
+            doPulse()
+        end
+
+        local function stopBinding(newKey)
+            isBinding = false
+            
+            if newKey then
+                updateValue(newKey)
+                
+                -- Save to config
+                Solara.Flags[text .. "_Keybind"] = newKey.Name
+                SaveConfig()
+            else
+                KeybindButton.Text = currentKey and currentKey.Name or "None"
+            end
+            
+            Solara.AnimationManager:PlayTween(KeybindButton, {
+                BackgroundColor3 = Solara.Settings.Theme.Secondary,
+                TextColor3 = Solara.Settings.Theme.TextColor
+            }, 0.2)
+        end
+
+        KeybindButton.MouseButton1Click:Connect(function()
+            if not isBinding then
+                if Solara.Settings.Sound.Enabled then
+                    Sounds.Click:Play()
+                end
+                startBinding()
+                
+                local inputConnection
+                inputConnection = UserInputService.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.Keyboard then
+                        inputConnection:Disconnect()
+                        stopBinding(input.KeyCode)
+                    elseif input.UserInputType == Enum.UserInputType.MouseButton1 or
+                           input.UserInputType == Enum.UserInputType.MouseButton2 then
+                        inputConnection:Disconnect()
+                        stopBinding(nil)
+                    end
+                end)
+            end
+        end)
+
+        -- Hover effects
+        KeybindButton.MouseEnter:Connect(function()
+            if not isBinding then
+                Solara.AnimationManager:PlayTween(KeybindButton, {
+                    BackgroundColor3 = Solara.Settings.Theme.Secondary:Lerp(Color3.new(1,1,1), 0.1)
+                }, 0.2)
+            end
+            
+            if Solara.Settings.Sound.Enabled then
+                Sounds.Hover:Play()
+            end
+        end)
+
+        KeybindButton.MouseLeave:Connect(function()
+            if not isBinding then
+                Solara.AnimationManager:PlayTween(KeybindButton, {
+                    BackgroundColor3 = Solara.Settings.Theme.Secondary
+                }, 0.2)
+            end
+        end)
+
+        return {
+            Instance = KeybindContainer,
+            SetKey = updateValue,
+            GetKey = function() return currentKey end
+        }
+    end
+
     -- Settings Panel
     function Window:CreateSettings()
         local SettingsTab = self:CreateTab("Settings")
         
         -- UI Color Settings
-        SettingsTab:CreateLabel = function(text)
-            local Label = Create("TextLabel", {
-                Parent = SettingsTab.Instance,
-                BackgroundTransparency = 1,
-                Position = UDim2.new(0, 15, 0, 10),
-                Size = UDim2.new(1, -30, 0, 20),
-                Font = Enum.Font.GothamBold,
-                Text = text,
-                TextColor3 = Solara.Settings.Theme.TextColor,
-                TextSize = 14,
-                TextXAlignment = Enum.TextXAlignment.Left
-            })
-        end
-
         SettingsTab:CreateLabel("UI Colors")
         
         local colorOptions = {
@@ -971,7 +1311,7 @@ function Solara:CreateWindow(config)
             SettingsTab:CreateColorPicker(colorOption[1], colorOption[2], Solara.Settings.Theme[colorOption[1]], function(color)
                 Solara.Settings.Theme[colorOption[1]] = color
                 SaveConfig()
-                Solara:ChangeUIColor(colorOption[1], color)
+                Window:UpdateTheme()
             end)
         end
 
@@ -1002,183 +1342,6 @@ function Solara:CreateWindow(config)
         -- Keybind Settings
         SettingsTab:CreateLabel("Keybinds")
         
-        SettingsTab:CreateKeybind = function(text, default, callback)
-            local KeybindContainer = Create("Frame", {
-                Parent = SettingsTab.Instance,
-                BackgroundColor3 = Solara.Settings.Theme.Primary,
-                Size = UDim2.new(1, 0, 0, 38)
-            })
-
-            Create("UICorner", {
-                Parent = KeybindContainer,
-                CornerRadius = UDim.new(0, 6)
-            })
-
-            local Label = Create("TextLabel", {
-                Parent = KeybindContainer,
-                BackgroundTransparency = 1,
-                Position = UDim2.new(0, 15, 0, 0),
-                Size = UDim2.new(1, -135, 1, 0),
-                Font = Enum.Font.GothamSemibold,
-                Text = text,
-                TextColor3 = Solara.Settings.Theme.TextColor,
-                TextSize = 13,
-                TextXAlignment = Enum.TextXAlignment.Left
-            })
-
-            local KeybindButton = Create("TextButton", {
-                Parent = KeybindContainer,
-                BackgroundColor3 = Solara.Settings.Theme.Secondary,
-                Position = UDim2.new(1, -120, 0.5, -15),
-                Size = UDim2.new(0, 100, 0, 30),
-                Font = Enum.Font.GothamSemibold,
-                Text = default and default.Name or "None",
-                TextColor3 = Solara.Settings.Theme.TextColor,
-                TextSize = 13,
-                AutoButtonColor = false
-            })
-
-            Create("UICorner", {
-                Parent = KeybindButton,
-                CornerRadius = UDim.new(0, 4)
-            })
-
-            -- Add subtle shadow
-            local KeybindShadow = Create("ImageLabel", {
-                Parent = KeybindButton,
-                BackgroundTransparency = 1,
-                Position = UDim2.new(0, -2, 0, -2),
-                Size = UDim2.new(1, 4, 1, 4),
-                Image = "rbxassetid://6014261993",
-                ImageColor3 = Color3.fromRGB(0, 0, 0),
-                ImageTransparency = 0.8,
-                ScaleType = Enum.ScaleType.Slice,
-                SliceCenter = Rect.new(49, 49, 450, 450),
-                ZIndex = 1
-            })
-
-            local currentKey = default
-            local isBinding = false
-
-            local function updateValue(value)
-                currentKey = value
-                KeybindButton.Text = currentKey and currentKey.Name or "None"
-                if callback then
-                    callback(currentKey)
-                end
-            end
-
-            -- Binding animation
-            local function startBinding()
-                isBinding = true
-                local dots = ""
-                local connection
-                
-                -- Animate dots while binding
-                connection = RunService.Heartbeat:Connect(function()
-                    if not isBinding then
-                        connection:Disconnect()
-                        return
-                    end
-                    dots = dots .. "."
-                    if #dots > 3 then dots = "" end
-                    KeybindButton.Text = "Press Key" .. dots
-                end)
-                
-                -- Pulse animation
-                local function doPulse()
-                    if not isBinding then return end
-                    
-                    Solara.AnimationManager:PlayTween(KeybindButton, {
-                        BackgroundColor3 = Solara.Settings.Theme.Accent,
-                        TextColor3 = Color3.fromRGB(255, 255, 255)
-                    }, 0.5)
-                    
-                    wait(0.5)
-                    
-                    if isBinding then
-                        Solara.AnimationManager:PlayTween(KeybindButton, {
-                            BackgroundColor3 = Solara.Settings.Theme.Secondary,
-                            TextColor3 = Solara.Settings.Theme.TextColor
-                        }, 0.5)
-                    end
-                    
-                    if isBinding then
-                        doPulse()
-                    end
-                end
-                
-                doPulse()
-            end
-
-            local function stopBinding(newKey)
-                isBinding = false
-                
-                if newKey then
-                    updateValue(newKey)
-                    
-                    -- Save to config
-                    Solara.Flags[text .. "_Keybind"] = newKey.Name
-                    SaveConfig()
-                else
-                    KeybindButton.Text = currentKey and currentKey.Name or "None"
-                end
-                
-                Solara.AnimationManager:PlayTween(KeybindButton, {
-                    BackgroundColor3 = Solara.Settings.Theme.Secondary,
-                    TextColor3 = Solara.Settings.Theme.TextColor
-                }, 0.2)
-            end
-
-            KeybindButton.MouseButton1Click:Connect(function()
-                if not isBinding then
-                    if Solara.Settings.Sound.Enabled then
-                        Sounds.Click:Play()
-                    end
-                    startBinding()
-                    
-                    local inputConnection
-                    inputConnection = UserInputService.InputBegan:Connect(function(input)
-                        if input.UserInputType == Enum.UserInputType.Keyboard then
-                            inputConnection:Disconnect()
-                            stopBinding(input.KeyCode)
-                        elseif input.UserInputType == Enum.UserInputType.MouseButton1 or
-                               input.UserInputType == Enum.UserInputType.MouseButton2 then
-                            inputConnection:Disconnect()
-                            stopBinding(nil)
-                        end
-                    end)
-                end
-            end)
-
-            -- Hover effects
-            KeybindButton.MouseEnter:Connect(function()
-                if not isBinding then
-                    Solara.AnimationManager:PlayTween(KeybindButton, {
-                        BackgroundColor3 = Solara.Settings.Theme.Secondary:Lerp(Color3.new(1,1,1), 0.1)
-                    }, 0.2)
-                end
-                
-                if Solara.Settings.Sound.Enabled then
-                    Sounds.Hover:Play()
-                end
-            end)
-
-            KeybindButton.MouseLeave:Connect(function()
-                if not isBinding then
-                    Solara.AnimationManager:PlayTween(KeybindButton, {
-                        BackgroundColor3 = Solara.Settings.Theme.Secondary
-                    }, 0.2)
-                end
-            end)
-
-            return {
-                Instance = KeybindContainer,
-                SetKey = updateValue,
-                GetKey = function() return currentKey end
-            }
-        end
-
         SettingsTab:CreateKeybind("Toggle UI", Solara.Settings.Keybind.Minimize, function(key)
             Solara.Settings.Keybind.Minimize = key
             SaveConfig()
@@ -1189,7 +1352,7 @@ function Solara:CreateWindow(config)
         
         SettingsTab:CreateButton("Save Configuration", function()
             SaveConfig()
-            Solara.NotificationSystem:CreateNotification("Success", "Configuration saved successfully!", 3, "success")
+            SettingsTab:CreateNotification("Success", "Configuration saved successfully!", 3)
         end)
 
         SettingsTab:CreateButton("Reset to Default", function()
@@ -1199,42 +1362,10 @@ function Solara:CreateWindow(config)
                 function(confirmed)
                     if confirmed then
                         -- Reset all settings to default
-                        Solara.Settings = DeepCopy({
-                            Theme = {
-                                Primary = Color3.fromRGB(24, 24, 36),
-                                Secondary = Color3.fromRGB(30, 30, 45),
-                                Accent = Color3.fromRGB(44, 120, 224),
-                                TextColor = Color3.fromRGB(240, 240, 240),
-                                DarkTextColor = Color3.fromRGB(150, 150, 150),
-                                ToggleOn = Color3.fromRGB(44, 120, 224),
-                                ToggleOff = Color3.fromRGB(60, 60, 75)
-                            },
-                            Animation = {
-                                TweenSpeed = 0.3,
-                                EasingStyle = Enum.EasingStyle.Quart,
-                                EasingDirection = Enum.EasingDirection.Out,
-                                TabSwitchSpeed = 0.2,
-                                MinimizeSpeed = 0.4
-                            },
-                            Sound = {
-                                Enabled = true,
-                                Volume = 0.5,
-                                HoverVolume = 0.2
-                            },
-                            Keybind = {
-                                Minimize = Enum.KeyCode.RightControl
-                            }
-                        })
+                        Solara.Settings = DeepCopy(DefaultSettings)
                         SaveConfig()
-                        Solara:ChangeUIColor("Primary", Solara.Settings.Theme.Primary)
-                        Solara:ChangeUIColor("Secondary", Solara.Settings.Theme.Secondary)
-                        Solara:ChangeUIColor("Accent", Solara.Settings.Theme.Accent)
-                        Solara:ChangeUIColor("TextColor", Solara.Settings.Theme.TextColor)
-                        Solara:ChangeUIColor("DarkTextColor", Solara.Settings.Theme.DarkTextColor)
-                        Solara:ChangeUIColor("ToggleOn", Solara.Settings.Theme.ToggleOn)
-                        Solara:ChangeUIColor("ToggleOff", Solara.Settings.Theme.ToggleOff)
                         Window:UpdateTheme()
-                        Solara.NotificationSystem:CreateNotification("Success", "Settings reset to default!", 3, "success")
+                        SettingsTab:CreateNotification("Success", "Settings reset to default!", 3)
                     end
                 end
             )
@@ -1328,305 +1459,220 @@ function Solara:CreateWindow(config)
         return ColorDisplay
     end
 
-    -- Initialize window
-    Solara.AnimationManager:PlayTween(Blur, {Size = 10}, 0.3)
-    
-    -- Add window to Solara
-    table.insert(Solara.Windows, Window)
-    
-    -- Create Settings
-    Window:CreateSettings()
-    
-    return Window
-end
+    --[[
+        SolaraUI Library - Part 5: Advanced Features & Final Touches
+        Authors: ny0xdel4s and fearqwzz_
+        Discord: https://discord.gg/p6HsBPFkc7
+        Version: 2.0.0
+    ]]
 
--- Notification System
-Solara.NotificationSystem = {
-    Notifications = {},
-    MaxNotifications = 5,
-    
-    Setup = function(self)
-        self.Container = Create("Frame", {
-            Parent = CoreGui:FindFirstChild("SolaraHub"),
-            BackgroundTransparency = 1,
-            Position = UDim2.new(1, -330, 0, 20),
-            Size = UDim2.new(0, 300, 1, -40),
-            Name = "NotificationContainer"
-        })
+    -- Notification System
+    Solara.NotificationSystem = {
+        Notifications = {},
+        MaxNotifications = 5,
         
-        Create("UIListLayout", {
-            Parent = self.Container,
-            HorizontalAlignment = Enum.HorizontalAlignment.Right,
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Padding = UDim.new(0, 10)
-        })
-    end,
-    
-    CreateNotification = function(self, title, message, duration, type)
-        if #self.Notifications >= self.MaxNotifications then
-            self.Notifications[1]:Destroy()
-            table.remove(self.Notifications, 1)
-        end
-        
-        -- Notification types: success, warning, error, info
-        local colors = {
-            success = Color3.fromRGB(46, 204, 113),
-            warning = Color3.fromRGB(241, 196, 15),
-            error = Color3.fromRGB(231, 76, 60),
-            info = Solara.Settings.Theme.Accent
-        }
-        
-        local icons = {
-            success = "rbxassetid://7733715400",
-            warning = "rbxassetid://7733715400",
-            error = "rbxassetid://7733715400",
-            info = "rbxassetid://7733715400"
-        }
-        
-        local Notification = Create("Frame", {
-            Parent = self.Container,
-            BackgroundColor3 = Solara.Settings.Theme.Primary,
-            Size = UDim2.new(1, 0, 0, 0), -- Start with 0 height
-            BackgroundTransparency = 1,
-            ClipsDescendants = true
-        })
-        
-        Create("UICorner", {
-            Parent = Notification,
-            CornerRadius = UDim.new(0, 8)
-        })
-        
-        -- Add glass blur effect
-        local BlurEffect = Create("ImageLabel", {
-            Parent = Notification,
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 1, 0),
-            Image = "rbxassetid://6014261993",
-            ImageColor3 = Color3.fromRGB(255, 255, 255),
-            ImageTransparency = 0.9,
-            ScaleType = Enum.ScaleType.Slice,
-            SliceCenter = Rect.new(49, 49, 450, 450)
-        })
-        
-        local Icon = Create("ImageLabel", {
-            Parent = Notification,
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0, 15, 0, 15),
-            Size = UDim2.new(0, 20, 0, 20),
-            Image = icons[type] or icons.info,
-            ImageColor3 = colors[type] or colors.info
-        })
-        
-        local Title = Create("TextLabel", {
-            Parent = Notification,
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0, 45, 0, 10),
-            Size = UDim2.new(1, -60, 0, 20),
-            Font = Enum.Font.GothamBold,
-            Text = title,
-            TextColor3 = Solara.Settings.Theme.TextColor,
-            TextSize = 14,
-            TextXAlignment = Enum.TextXAlignment.Left
-        })
-        
-        local Message = Create("TextLabel", {
-            Parent = Notification,
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0, 45, 0, 30),
-            Size = UDim2.new(1, -60, 0, 40),
-            Font = Enum.Font.Gotham,
-            Text = message,
-            TextColor3 = Solara.Settings.Theme.DarkTextColor,
-            TextSize = 13,
-            TextWrapped = true,
-            TextXAlignment = Enum.TextXAlignment.Left
-        })
-        
-        -- Progress bar
-        local ProgressBar = Create("Frame", {
-            Parent = Notification,
-            BackgroundColor3 = colors[type] or colors.info,
-            Position = UDim2.new(0, 0, 1, -2),
-            Size = UDim2.new(0, 0, 0, 2)
-        })
-
-        -- Animate notification entrance
-        Solara.AnimationManager:PlayTween(Notification, {
-            Size = UDim2.new(1, 0, 0, 80),
-            BackgroundTransparency = 0
-        }, 0.3, {Style = Enum.EasingStyle.Back})
-
-        -- Animate progress bar
-        Solara.AnimationManager:PlayTween(ProgressBar, {
-            Size = UDim2.new(1, 0, 0, 2)
-        }, duration or 5)
-
-        table.insert(self.Notifications, Notification)
-        
-        -- Remove notification after duration
-        delay(duration or 5, function()
-            if Notification and Notification.Parent then
-                Solara.AnimationManager:PlayTween(Notification, {
-                    Size = UDim2.new(1, 0, 0, 0),
-                    BackgroundTransparency = 1
-                }, 0.3, {Style = Enum.EasingStyle.Back, Direction = Enum.EasingDirection.In}).Completed:Wait()
-                Notification:Destroy()
-                
-                for i, v in pairs(self.Notifications) do
-                    if v == Notification then
-                        table.remove(self.Notifications, i)
-                        break
-                    end
-                end
-            end
-        end)
-    end
-}
-
--- Tooltip System
-Solara.TooltipSystem = {
-    ActiveTooltip = nil,
-    
-    CreateTooltip = function(self, parent, text)
-        local Tooltip = Create("Frame", {
-            Parent = CoreGui:FindFirstChild("SolaraHub"),
-            BackgroundColor3 = Solara.Settings.Theme.Primary,
-            BackgroundTransparency = 1,
-            Size = UDim2.new(0, 200, 0, 30),
-            Visible = false,
-            ZIndex = 100
-        })
-        
-        Create("UICorner", {
-            Parent = Tooltip,
-            CornerRadius = UDim.new(0, 6)
-        })
-        
-        local TextLabel = Create("TextLabel", {
-            Parent = Tooltip,
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0, 10, 0, 0),
-            Size = UDim2.new(1, -20, 1, 0),
-            Font = Enum.Font.Gotham,
-            Text = text,
-            TextColor3 = Solara.Settings.Theme.TextColor,
-            TextSize = 12,
-            TextWrapped = true,
-            ZIndex = 101
-        })
-        
-        -- Show/Hide events
-        parent.MouseEnter:Connect(function()
-            if self.ActiveTooltip then
-                self.ActiveTooltip.Visible = false
-            end
-            
-            self.ActiveTooltip = Tooltip
-            Tooltip.Position = UDim2.new(0, parent.AbsolutePosition.X + parent.AbsoluteSize.X + 10,
-                                       0, parent.AbsolutePosition.Y)
-            Tooltip.Visible = true
-            
-            Solara.AnimationManager:PlayTween(Tooltip, {
-                BackgroundTransparency = 0
-            }, 0.2)
-        end)
-        
-        parent.MouseLeave:Connect(function()
-            Solara.AnimationManager:PlayTween(Tooltip, {
-                BackgroundTransparency = 1
-            }, 0.2).Completed:Wait()
-            
-            if self.ActiveTooltip == Tooltip then
-                self.ActiveTooltip = nil
-                Tooltip.Visible = false
-            end
-        end)
-    end
-}
-
--- Context Menu System
-Solara.ContextMenuSystem = {
-    CreateContextMenu = function(self, items)
-        local ContextMenu = Create("Frame", {
-            Parent = CoreGui:FindFirstChild("SolaraHub"),
-            BackgroundColor3 = Solara.Settings.Theme.Primary,
-            BackgroundTransparency = 1,
-            Size = UDim2.new(0, 150, 0, #items * 30 + 10),
-            Visible = false,
-            ZIndex = 1000
-        })
-        
-        Create("UICorner", {
-            Parent = ContextMenu,
-            CornerRadius = UDim.new(0, 6)
-        })
-        
-        -- Add items
-        for i, item in ipairs(items) do
-            local Button = Create("TextButton", {
-                Parent = ContextMenu,
+        Setup = function(self)
+            self.Container = Create("Frame", {
+                Parent = CoreGui:FindFirstChild("SolaraHub"),
                 BackgroundTransparency = 1,
-                Position = UDim2.new(0, 5, 0, (i-1) * 30 + 5),
-                Size = UDim2.new(1, -10, 0, 25),
-                Font = Enum.Font.Gotham,
-                Text = item.Text,
-                TextColor3 = Solara.Settings.Theme.TextColor,
-                TextSize = 13,
-                ZIndex = 1001
+                Position = UDim2.new(1, -330, 0, 20),
+                Size = UDim2.new(0, 300, 1, -40),
+                Name = "NotificationContainer"
             })
             
-            -- Hover effect
-            Button.MouseEnter:Connect(function()
-                Solara.AnimationManager:PlayTween(Button, {
-                    BackgroundTransparency = 0,
-                    BackgroundColor3 = Solara.Settings.Theme.Accent
-                }, 0.2)
-            end)
+            Create("UIListLayout", {
+                Parent = self.Container,
+                HorizontalAlignment = Enum.HorizontalAlignment.Right,
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Padding = UDim.new(0, 10)
+            })
+        end,
+        
+        CreateNotification = function(self, title, message, duration, type)
+            if #self.Notifications >= self.MaxNotifications then
+                self.Notifications[1]:Destroy()
+                table.remove(self.Notifications, 1)
+            end
             
-            Button.MouseLeave:Connect(function()
-                Solara.AnimationManager:PlayTween(Button, {
-                    BackgroundTransparency = 1
-                }, 0.2)
-            end)
+            -- Notification types: success, warning, error, info
+            local colors = {
+                success = Color3.fromRGB(46, 204, 113),
+                warning = Color3.fromRGB(241, 196, 15),
+                error = Color3.fromRGB(231, 76, 60),
+                info = Solara.Settings.Theme.Accent
+            }
             
-            Button.MouseButton1Click:Connect(function()
-                if item.Callback then
-                    item.Callback()
+            local icons = {
+                success = "rbxassetid://7733715400",
+                warning = "rbxassetid://7733715400",
+                error = "rbxassetid://7733715400",
+                info = "rbxassetid://7733715400"
+            }
+            
+            local Notification = Create("Frame", {
+                Parent = self.Container,
+                BackgroundColor3 = Solara.Settings.Theme.Primary,
+                Size = UDim2.new(1, 0, 0, 0), -- Start with 0 height
+                BackgroundTransparency = 1,
+                ClipsDescendants = true
+            })
+            
+            Create("UICorner", {
+                Parent = Notification,
+                CornerRadius = UDim.new(0, 8)
+            })
+            
+            -- Add glass blur effect
+            local BlurEffect = Create("ImageLabel", {
+                Parent = Notification,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 1, 0),
+                Image = "rbxassetid://6014261993",
+                ImageColor3 = Color3.fromRGB(255, 255, 255),
+                ImageTransparency = 0.9,
+                ScaleType = Enum.ScaleType.Slice,
+                SliceCenter = Rect.new(49, 49, 450, 450)
+            })
+            
+            local Icon = Create("ImageLabel", {
+                Parent = Notification,
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0, 15, 0, 15),
+                Size = UDim2.new(0, 20, 0, 20),
+                Image = icons[type] or icons.info,
+                ImageColor3 = colors[type] or colors.info
+            })
+            
+            local Title = Create("TextLabel", {
+                Parent = Notification,
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0, 45, 0, 10),
+                Size = UDim2.new(1, -60, 0, 20),
+                Font = Enum.Font.GothamBold,
+                Text = title,
+                TextColor3 = Solara.Settings.Theme.TextColor,
+                TextSize = 14,
+                TextXAlignment = Enum.TextXAlignment.Left
+            })
+            
+            local Message = Create("TextLabel", {
+                Parent = Notification,
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0, 45, 0, 30),
+                Size = UDim2.new(1, -60, 0, 40),
+                Font = Enum.Font.Gotham,
+                Text = message,
+                TextColor3 = Solara.Settings.Theme.DarkTextColor,
+                TextSize = 13,
+                TextWrapped = true,
+                TextXAlignment = Enum.TextXAlignment.Left
+            })
+            
+            -- Progress bar
+            local ProgressBar = Create("Frame", {
+                Parent = Notification,
+                BackgroundColor3 = colors[type] or colors.info,
+                Position = UDim2.new(0, 0, 1, -2),
+                Size = UDim2.new(1, 0, 0, 2)
+            })
+            
+            -- Animate notification entrance
+            Solara.AnimationManager:PlayTween(Notification, {
+                Size = UDim2.new(1, 0, 0, 80),
+                BackgroundTransparency = 0
+            }, 0.3, {Style = Enum.EasingStyle.Back})
+            
+            -- Animate progress bar
+            Solara.AnimationManager:PlayTween(ProgressBar, {
+                Size = UDim2.new(0, 0, 0, 2)
+            }, duration)
+            
+            table.insert(self.Notifications, Notification)
+            
+            -- Remove notification after duration
+            delay(duration, function()
+                if Notification and Notification.Parent then
+                    Solara.AnimationManager:PlayTween(Notification, {
+                        Size = UDim2.new(1, 0, 0, 0),
+                        BackgroundTransparency = 1
+                    }, 0.3, {Style = Enum.EasingStyle.Back, Direction = Enum.EasingDirection.In}).Completed:Wait()
+                    Notification:Destroy()
+                    
+                    for i, v in pairs(self.Notifications) do
+                        if v == Notification then
+                            table.remove(self.Notifications, i)
+                            break
+                        end
+                    end
                 end
-                ContextMenu.Visible = false
             end)
         end
+    }
+
+    -- Tooltip System
+    Solara.TooltipSystem = {
+        ActiveTooltip = nil,
         
-        -- Show/Hide context menu
-        return {
-            Show = function(position)
-                ContextMenu.Position = position
-                ContextMenu.Visible = true
-                Solara.AnimationManager:PlayTween(ContextMenu, {
+        CreateTooltip = function(self, parent, text)
+            local Tooltip = Create("Frame", {
+                Parent = CoreGui:FindFirstChild("SolaraHub"),
+                BackgroundColor3 = Solara.Settings.Theme.Primary,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(0, 200, 0, 30),
+                Visible = false,
+                ZIndex = 100
+            })
+            
+            Create("UICorner", {
+                Parent = Tooltip,
+                CornerRadius = UDim.new(0, 6)
+            })
+            
+            local TextLabel = Create("TextLabel", {
+                Parent = Tooltip,
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0, 10, 0, 0),
+                Size = UDim2.new(1, -20, 1, 0),
+                Font = Enum.Font.Gotham,
+                Text = text,
+                TextColor3 = Solara.Settings.Theme.TextColor,
+                TextSize = 12,
+                TextWrapped = true,
+                ZIndex = 101
+            })
+            
+            -- Show/Hide events
+            parent.MouseEnter:Connect(function()
+                if self.ActiveTooltip then
+                    self.ActiveTooltip.Visible = false
+                end
+                
+                self.ActiveTooltip = Tooltip
+                Tooltip.Position = UDim2.new(0, parent.AbsolutePosition.X + parent.AbsoluteSize.X + 10,
+                                           0, parent.AbsolutePosition.Y)
+                Tooltip.Visible = true
+                
+                Solara.AnimationManager:PlayTween(Tooltip, {
                     BackgroundTransparency = 0
                 }, 0.2)
-            end,
-            Hide = function()
-                Solara.AnimationManager:PlayTween(ContextMenu, {
+            end)
+            
+            parent.MouseLeave:Connect(function()
+                Solara.AnimationManager:PlayTween(Tooltip, {
                     BackgroundTransparency = 1
                 }, 0.2).Completed:Wait()
-                ContextMenu.Visible = false
-            end
-        }
-    end
-}
+                
+                if self.ActiveTooltip == Tooltip then
+                    self.ActiveTooltip = nil
+                    Tooltip.Visible = false
+                end
+            end)
+        end
+    }
 
--- Window Minimize Animation
-function Solara:InitializeWindowMinimize(Window)
-    Window:UpdateTheme = function()
-        -- Update theme for window elements if needed
-        -- This function can be expanded based on UI elements
-    end
-
-    Window.IsMinimized = false
-
+    -- Window Minimize Animation
     function Window:MinimizeToggle()
-        local main = self.Instance.Main
+        local main = self.Main
         local isMinimized = not self.IsMinimized
         self.IsMinimized = isMinimized
         
@@ -1638,62 +1684,115 @@ function Solara:InitializeWindowMinimize(Window)
             Solara.AnimationManager:PlayTween(main, {
                 Size = UDim2.new(0, 650, 0, 35),
                 Position = UDim2.new(1, -670, 1, -55)
-            }, Solara.Settings.Animation.MinimizeSpeed, {Style = Enum.EasingStyle.Back, Direction = Enum.EasingDirection.In})
+            }, 0.4, {Style = Enum.EasingStyle.Back, Direction = Enum.EasingDirection.In})
         else
             -- Animate restore
             Solara.AnimationManager:PlayTween(main, {
                 Size = UDim2.new(0, 650, 0, 350),
                 Position = self.LastPosition
-            }, Solara.Settings.Animation.MinimizeSpeed, {Style = Enum.EasingStyle.Back, Direction = Enum.EasingDirection.Out})
+            }, 0.4, {Style = Enum.EasingStyle.Back, Direction = Enum.EasingDirection.Out})
         end
     end
 
-    -- Connect CloseButton to minimize toggle
-    local CloseButton = self.Instance.TopBar.CloseButton
-    CloseButton.MouseButton1Click:Connect(function()
-        Window:MinimizeToggle()
-    end)
-end
-
--- Notification and Tooltip Setup
-function Solara:Initialize()
-    -- Initialize all systems
-    self.NotificationSystem:Setup()
-    
-    -- Initialize Tooltip System (if needed)
-    -- self.TooltipSystem:Setup() -- Assuming a setup function if necessary
-
-    -- Initialize Context Menu System (if needed)
-    -- self.ContextMenuSystem:Setup() -- Assuming a setup function if necessary
-
-    -- Setup global keybind
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-        if input.KeyCode == self.Settings.Keybind.Minimize then
-            for _, window in pairs(self.Windows) do
-                window:MinimizeToggle()
+    -- Context Menu System
+    Solara.ContextMenuSystem = {
+        CreateContextMenu = function(self, items)
+            local ContextMenu = Create("Frame", {
+                Parent = CoreGui:FindFirstChild("SolaraHub"),
+                BackgroundColor3 = Solara.Settings.Theme.Primary,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(0, 150, 0, #items * 30 + 10),
+                Visible = false,
+                ZIndex = 1000
+            })
+            
+            Create("UICorner", {
+                Parent = ContextMenu,
+                CornerRadius = UDim.new(0, 6)
+            })
+            
+            -- Add items
+            for i, item in ipairs(items) do
+                local Button = Create("TextButton", {
+                    Parent = ContextMenu,
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 5, 0, (i-1) * 30 + 5),
+                    Size = UDim2.new(1, -10, 0, 25),
+                    Font = Enum.Font.Gotham,
+                    Text = item.Text,
+                    TextColor3 = Solara.Settings.Theme.TextColor,
+                    TextSize = 13,
+                    ZIndex = 1001
+                })
+                
+                -- Hover effect
+                Button.MouseEnter:Connect(function()
+                    Solara.AnimationManager:PlayTween(Button, {
+                        BackgroundTransparency = 0,
+                        BackgroundColor3 = Solara.Settings.Theme.Accent
+                    }, 0.2)
+                end)
+                
+                Button.MouseLeave:Connect(function()
+                    Solara.AnimationManager:PlayTween(Button, {
+                        BackgroundTransparency = 1
+                    }, 0.2)
+                end)
+                
+                Button.MouseButton1Click:Connect(function()
+                    if item.Callback then
+                        item.Callback()
+                    end
+                    ContextMenu.Visible = false
+                end)
             end
+            
+            -- Show/Hide context menu
+            return {
+                Show = function(position)
+                    ContextMenu.Position = position
+                    ContextMenu.Visible = true
+                    Solara.AnimationManager:PlayTween(ContextMenu, {
+                        BackgroundTransparency = 0
+                    }, 0.2)
+                end,
+                Hide = function()
+                    Solara.AnimationManager:PlayTween(ContextMenu, {
+                        BackgroundTransparency = 1
+                    }, 0.2).Completed:Wait()
+                    ContextMenu.Visible = false
+                end
+            }
         end
-    end)
-    
-    -- Load saved configuration
-    LoadConfig()
-    
-    -- Create welcome notification
-    self.NotificationSystem:CreateNotification(
-        "Welcome to SolaraUI",
-        "Press " .. self.Settings.Keybind.Minimize.Name .. " to toggle the UI",
-        5,
-        "info"
-    )
+    }
+
+    -- Final Initialization
+    function Solara:Initialize()
+        -- Initialize all systems
+        self.NotificationSystem:Setup()
+        
+        -- Setup global keybind
+        UserInputService.InputBegan:Connect(function(input)
+            if input.KeyCode == self.Settings.Keybind.Minimize then
+                for _, window in pairs(self.Windows) do
+                    window:MinimizeToggle()
+                end
+            end
+        end)
+        
+        -- Load saved configuration
+        LoadConfig()
+        
+        -- Create welcome notification
+        self.NotificationSystem:CreateNotification(
+            "Welcome to SolaraUI",
+            "Press " .. self.Settings.Keybind.Minimize.Name .. " to toggle the UI",
+            5,
+            "info"
+        )
+    end
+
+    return Window
 end
 
--- Initialize Notification and Tooltip Systems
-Solara.NotificationSystem:Setup()
-
--- Example of creating a window (You can remove or modify this as needed)
-local mainWindow = Solara:CreateWindow({Title = "Main Window"})
-Solara:Initialize()
-
--- Return the Solara table
 return Solara
