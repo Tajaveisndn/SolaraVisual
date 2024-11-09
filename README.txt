@@ -1,636 +1,302 @@
---[[
-    SolaraUI Library
-    Author: Seu Nome
-    Description: Uma moderna e profissional UI library para Roblox exploits
-    Version: 1.0.0
-]]
+local Library = {}
 
--- Services
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
 
--- Variables
-local Solara = {
-    Settings = {
-        Theme = {
-            Primary = Color3.fromRGB(24, 24, 36),
-            Secondary = Color3.fromRGB(30, 30, 45),
-            Accent = Color3.fromRGB(44, 120, 224),
-            TextColor = Color3.fromRGB(240, 240, 240),
-            DarkTextColor = Color3.fromRGB(150, 150, 150)
-        },
-        Animation = {
-            TweenSpeed = 0.3,
-            EasingStyle = Enum.EasingStyle.Quart,
-            EasingDirection = Enum.EasingDirection.Out
-        },
-        UseSound = true
-    },
-    Flags = {},
-    SignalManager = {},
-    Windows = {}
-}
+local Toggled = true
+local MainFrame
+local Minimized = false
 
--- Utility Functions
-local function CreateTween(instance, properties, duration)
-    local tween = TweenService:Create(
-        instance,
-        TweenInfo.new(
-            duration or Solara.Settings.Animation.TweenSpeed,
-            Solara.Settings.Animation.EasingStyle,
-            Solara.Settings.Animation.EasingDirection
-        ),
-        properties
-    )
-    return tween
-end
+function Library:CreateWindow(config)
+    local title = config.Title or "SolaraHub"
+    local keybind = config.Keybind or Enum.KeyCode.RightControl
 
-local function Create(instanceType, properties)
-    local instance = Instance.new(instanceType)
-    for property, value in pairs(properties) do
-        instance[property] = value
+    -- Criar ScreenGui
+    local SolaraHub = Instance.new("ScreenGui")
+    SolaraHub.Name = "SolaraHub"
+    
+    if syn then
+        syn.protect_gui(SolaraHub)
+        SolaraHub.Parent = CoreGui
+    else
+        SolaraHub.Parent = CoreGui
     end
-    return instance
-end
-
-local function MakeClickable(button, color, hoverColor, clickSound)
-    button.MouseEnter:Connect(function()
-        CreateTween(button, {BackgroundColor3 = hoverColor}):Play()
-    end)
-    
-    button.MouseLeave:Connect(function()
-        CreateTween(button, {BackgroundColor3 = color}):Play()
-    end)
-    
-    button.MouseButton1Down:Connect(function()
-        CreateTween(button, {BackgroundColor3 = color:Lerp(Color3.new(0,0,0), 0.2)}):Play()
-        if Solara.Settings.UseSound and clickSound then
-            clickSound:Play()
-        end
-    end)
-    
-    button.MouseButton1Up:Connect(function()
-        CreateTween(button, {BackgroundColor3 = hoverColor}):Play()
-    end)
-end
-
-function Solara:CreateWindow(config)
-    config = config or {}
-    local Window = {}
-    
-    -- Create Main GUI
-    local SolaraGui = Create("ScreenGui", {
-        Name = "SolaraHub",
-        Parent = CoreGui,
-        ResetOnSpawn = false,
-        ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    })
-
-    -- Sounds
-    local ClickSound = Create("Sound", {
-        Parent = SolaraGui,
-        SoundId = "rbxassetid://6895079853",
-        Volume = 0.5
-    })
-
-    local HoverSound = Create("Sound", {
-        Parent = SolaraGui,
-        SoundId = "rbxassetid://6895079853",
-        Volume = 0.2
-    })
-
-    -- Create Blur Effect
-    local Blur = Create("BlurEffect", {
-        Parent = game:GetService("Lighting"),
-        Enabled = false,
-        Size = 0
-    })
 
     -- Main Frame
-    local Main = Create("Frame", {
-        Name = "Main",
-        Parent = SolaraGui,
-        BackgroundColor3 = Solara.Settings.Theme.Primary,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0.5, -325, 0.5, -175),
-        Size = UDim2.new(0, 650, 0, 350),
-        ClipsDescendants = true
-    })
+    MainFrame = Instance.new("Frame")
+    local UICorner = Instance.new("UICorner")
+    local TopBar = Instance.new("Frame")
+    local TopBarCorner = Instance.new("UICorner")
+    local Title = Instance.new("TextLabel")
+    local CloseBtn = Instance.new("TextButton")
+    local MinimizeBtn = Instance.new("TextButton")
+    local TabHolder = Instance.new("Frame")
+    local TabContainer = Instance.new("ScrollingFrame")
+    local TabList = Instance.new("UIListLayout")
+    local ContainerHolder = Instance.new("Frame")
 
-    -- Add Main Corner
-    local MainCorner = Create("UICorner", {
-        Parent = Main,
-        CornerRadius = UDim.new(0, 8)
-    })
+    MainFrame.Name = "MainFrame"
+    MainFrame.Parent = SolaraHub
+    MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -175)
+    MainFrame.Size = UDim2.new(0, 600, 0, 350)
+    MainFrame.ClipsDescendants = true
 
-    -- Add Shadow
-    local Shadow = Create("ImageLabel", {
-        Parent = Main,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, -15, 0, -15),
-        Size = UDim2.new(1, 30, 1, 30),
-        Image = "rbxassetid://6014261993",
-        ImageColor3 = Color3.fromRGB(0, 0, 0),
-        ImageTransparency = 0.5,
-        ScaleType = Enum.ScaleType.Slice,
-        SliceCenter = Rect.new(49, 49, 450, 450)
-    })
+    UICorner.CornerRadius = UDim.new(0, 5)
+    UICorner.Parent = MainFrame
 
-    -- Top Bar
-    local TopBar = Create("Frame", {
-        Name = "TopBar",
-        Parent = Main,
-        BackgroundColor3 = Solara.Settings.Theme.Secondary,
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 35)
-    })
+    TopBar.Name = "TopBar"
+    TopBar.Parent = MainFrame
+    TopBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TopBar.Size = UDim2.new(1, 0, 0, 30)
 
-    -- Add Top Bar Corner
-    Create("UICorner", {
-        Parent = TopBar,
-        CornerRadius = UDim.new(0, 8)
-    })
+    TopBarCorner.CornerRadius = UDim.new(0, 5)
+    TopBarCorner.Parent = TopBar
 
-    -- Title
-    local Title = Create("TextLabel", {
-        Parent = TopBar,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 15, 0, 0),
-        Size = UDim2.new(0, 200, 1, 0),
-        Font = Enum.Font.GothamBold,
-        Text = config.Title or "SolaraHub",
-        TextColor3 = Solara.Settings.Theme.TextColor,
-        TextSize = 14,
-        TextXAlignment = Enum.TextXAlignment.Left
-    })
+    Title.Name = "Title"
+    Title.Parent = TopBar
+    Title.BackgroundTransparency = 1
+    Title.Position = UDim2.new(0, 10, 0, 0)
+    Title.Size = UDim2.new(0.5, 0, 1, 0)
+    Title.Font = Enum.Font.GothamBold
+    Title.Text = title
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextSize = 14
+    Title.TextXAlignment = Enum.TextXAlignment.Left
 
-    -- Close Button
-    local CloseButton = Create("TextButton", {
-        Parent = TopBar,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(1, -30, 0, 5),
-        Size = UDim2.new(0, 25, 0, 25),
-        Font = Enum.Font.GothamBold,
-        Text = "×",
-        TextColor3 = Solara.Settings.Theme.TextColor,
-        TextSize = 20
-    })
+    CloseBtn.Name = "CloseBtn"
+    CloseBtn.Parent = TopBar
+    CloseBtn.BackgroundTransparency = 1
+    CloseBtn.Position = UDim2.new(1, -25, 0, 2)
+    CloseBtn.Size = UDim2.new(0, 25, 0, 25)
+    CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.Text = "×"
+    CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseBtn.TextSize = 20
 
-    -- Add hover effect to close button
-    CloseButton.MouseEnter:Connect(function()
-        CreateTween(CloseButton, {TextColor3 = Color3.fromRGB(255, 95, 95)}):Play()
-        if Solara.Settings.UseSound then
-            HoverSound:Play()
-        end
-    end)
+    MinimizeBtn.Name = "MinimizeBtn"
+    MinimizeBtn.Parent = TopBar
+    MinimizeBtn.BackgroundTransparency = 1
+    MinimizeBtn.Position = UDim2.new(1, -50, 0, 2)
+    MinimizeBtn.Size = UDim2.new(0, 25, 0, 25)
+    MinimizeBtn.Font = Enum.Font.GothamBold
+    MinimizeBtn.Text = "-"
+    MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MinimizeBtn.TextSize = 20
 
-    CloseButton.MouseLeave:Connect(function()
-        CreateTween(CloseButton, {TextColor3 = Solara.Settings.Theme.TextColor}):Play()
-    end)
+    TabHolder.Name = "TabHolder"
+    TabHolder.Parent = MainFrame
+    TabHolder.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TabHolder.Position = UDim2.new(0, 5, 0, 35)
+    TabHolder.Size = UDim2.new(0, 140, 1, -40)
 
-    -- Add click effect to close button
-    CloseButton.MouseButton1Click:Connect(function()
-        if Solara.Settings.UseSound then
-            ClickSound:Play()
-        end
-        
-        -- Fade out animation
-        CreateTween(Main, {BackgroundTransparency = 1}):Play()
-        CreateTween(Shadow, {ImageTransparency = 1}):Play()
-        CreateTween(Blur, {Size = 0}):Play()
-        
-        wait(0.3)
-        SolaraGui:Destroy()
-        Blur:Destroy()
-    end)
+    Instance.new("UICorner").Parent = TabHolder
+
+    TabContainer.Name = "TabContainer"
+    TabContainer.Parent = TabHolder
+    TabContainer.Active = true
+    TabContainer.BackgroundTransparency = 1
+    TabContainer.Position = UDim2.new(0, 0, 0, 5)
+    TabContainer.Size = UDim2.new(1, 0, 1, -10)
+    TabContainer.ScrollBarThickness = 2
+    TabContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+    TabList.Parent = TabContainer
+    TabList.SortOrder = Enum.SortOrder.LayoutOrder
+    TabList.Padding = UDim.new(0, 5)
+
+    ContainerHolder.Name = "ContainerHolder"
+    ContainerHolder.Parent = MainFrame
+    ContainerHolder.BackgroundTransparency = 1
+    ContainerHolder.Position = UDim2.new(0, 150, 0, 35)
+    ContainerHolder.Size = UDim2.new(1, -155, 1, -40)
 
     -- Make window draggable
-    local Dragging = false
-    local DragInput
-    local DragStart
-    local StartPos
+    local dragging
+    local dragInput
+    local dragStart
+    local startPos
+
+    local function update(input)
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
 
     TopBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            Dragging = true
-            DragStart = input.Position
-            StartPos = Main.Position
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
         end
     end)
 
-    TopBar.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            Dragging = false
+    TopBar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
         end
     end)
 
     UserInputService.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement and Dragging then
-            local Delta = input.Position - DragStart
-            Main.Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + Delta.X, StartPos.Y.Scale, StartPos.Y.Offset + Delta.Y)
+        if input == dragInput and dragging then
+            update(input)
         end
     end)
 
-    -- Create Tab Container and Content Container
-    local TabContainer = Create("ScrollingFrame", {
-        Parent = Main,
-        BackgroundColor3 = Solara.Settings.Theme.Secondary,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0, 10, 0, 45),
-        Size = UDim2.new(0, 130, 1, -55),
-        CanvasSize = UDim2.new(0, 0, 0, 0),
-        ScrollBarThickness = 0
-    })
+    -- Close and Minimize Functionality
+    CloseBtn.MouseButton1Click:Connect(function()
+        SolaraHub:Destroy()
+    end)
 
-    -- Add corners to TabContainer
-    Create("UICorner", {
-        Parent = TabContainer,
-        CornerRadius = UDim.new(0, 8)
-    })
+    MinimizeBtn.MouseButton1Click:Connect(function()
+        Minimized = not Minimized
+        if Minimized then
+            MainFrame:TweenSize(UDim2.new(0, 600, 0, 30), "Out", "Quad", 0.3, true)
+        else
+            MainFrame:TweenSize(UDim2.new(0, 600, 0, 350), "Out", "Quad", 0.3, true)
+        end
+    end)
 
-    -- Add list layout to TabContainer
-    local TabList = Create("UIListLayout", {
-        Parent = TabContainer,
-        HorizontalAlignment = Enum.HorizontalAlignment.Center,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 5)
-    })
+    -- Toggle GUI
+    UserInputService.InputBegan:Connect(function(input)
+        if input.KeyCode == keybind then
+            Toggled = not Toggled
+            MainFrame.Visible = Toggled
+        end
+    end)
 
-    local ContentContainer = Create("Frame", {
-        Parent = Main,
-        BackgroundColor3 = Solara.Settings.Theme.Secondary,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0, 150, 0, 45),
-        Size = UDim2.new(1, -160, 1, -55)
-    })
+    local Window = {}
+    
+    function Window:Tab(name)
+        local TabButton = Instance.new("TextButton")
+        local TabButtonCorner = Instance.new("UICorner")
+        local Container = Instance.new("ScrollingFrame")
+        local ContainerList = Instance.new("UIListLayout")
 
-    -- Add corners to ContentContainer
-    Create("UICorner", {
-        Parent = ContentContainer,
-        CornerRadius = UDim.new(0, 8)
-    })
+        TabButton.Name = name
+        TabButton.Parent = TabContainer
+        TabButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        TabButton.Size = UDim2.new(1, -10, 0, 30)
+        TabButton.Font = Enum.Font.Gotham
+        TabButton.Text = name
+        TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TabButton.TextSize = 14
+        TabButton.AutoButtonColor = false
 
-    -- Tab Functions
-    function Window:CreateTab(name)
-        local Tab = {}
-        
-        -- Create tab button
-        local TabButton = Create("TextButton", {
-            Parent = TabContainer,
-            BackgroundColor3 = Solara.Settings.Theme.Secondary,
-            BorderSizePixel = 0,
-            Size = UDim2.new(0.9, 0, 0, 32),
-            Font = Enum.Font.GothamSemibold,
-            Text = name,
-            TextColor3 = Solara.Settings.Theme.DarkTextColor,
-            TextSize = 13,
-            AutoButtonColor = false
-        })
+        TabButtonCorner.CornerRadius = UDim.new(0, 5)
+        TabButtonCorner.Parent = TabButton
 
-        -- Add corners to tab button
-        Create("UICorner", {
-            Parent = TabButton,
-            CornerRadius = UDim.new(0, 6)
-        })
+        Container.Name = name.."Container"
+        Container.Parent = ContainerHolder
+        Container.Active = true
+        Container.BackgroundTransparency = 1
+        Container.Size = UDim2.new(1, 0, 1, 0)
+        Container.ScrollBarThickness = 2
+        Container.Visible = false
 
-        -- Create tab content
-        local TabContent = Create("ScrollingFrame", {
-            Parent = ContentContainer,
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            Size = UDim2.new(1, 0, 1, 0),
-            CanvasSize = UDim2.new(0, 0, 0, 0),
-            ScrollBarThickness = 3,
-            Visible = false
-        })
+        ContainerList.Parent = Container
+        ContainerList.SortOrder = Enum.SortOrder.LayoutOrder
+        ContainerList.Padding = UDim.new(0, 5)
 
-        -- Add padding to tab content
-        local ContentPadding = Create("UIPadding", {
-            Parent = TabContent,
-            PaddingLeft = UDim.new(0, 10),
-            PaddingRight = UDim.new(0, 10),
-            PaddingTop = UDim.new(0, 10)
-        })
+        if #TabContainer:GetChildren() == 2 then
+            Container.Visible = true
+            TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        end
 
-        -- Add list layout to tab content
-        local ContentList = Create("UIListLayout", {
-            Parent = TabContent,
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Padding = UDim.new(0, 8)
-        })
-
-        -- Update canvas size when content changes
-        ContentList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            TabContent.CanvasSize = UDim2.new(0, 0, 0, ContentList.AbsoluteContentSize.Y + 20)
-        end)
-
-        -- Tab button functionality
         TabButton.MouseButton1Click:Connect(function()
+            for _, container in pairs(ContainerHolder:GetChildren()) do
+                container.Visible = false
+            end
             for _, button in pairs(TabContainer:GetChildren()) do
                 if button:IsA("TextButton") then
-                    CreateTween(button, {
-                        BackgroundColor3 = Solara.Settings.Theme.Secondary,
-                        TextColor3 = Solara.Settings.Theme.DarkTextColor
-                    }):Play()
+                    button.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
                 end
             end
-            
-            CreateTween(TabButton, {
-                BackgroundColor3 = Solara.Settings.Theme.Accent,
-                TextColor3 = Solara.Settings.Theme.TextColor
-            }):Play()
-
-            for _, content in pairs(ContentContainer:GetChildren()) do
-                if content:IsA("ScrollingFrame") then
-                    content.Visible = false
-                end
-            end
-            TabContent.Visible = true
-            
-            if Solara.Settings.UseSound then
-                ClickSound:Play()
-            end
+            Container.Visible = true
+            TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
         end)
 
-        -- Tab Element Functions
-        function Tab:CreateButton(text, callback)
-            local Button = Create("TextButton", {
-                Parent = TabContent,
-                BackgroundColor3 = Solara.Settings.Theme.Primary,
-                Size = UDim2.new(1, 0, 0, 32),
-                Font = Enum.Font.GothamSemibold,
-                Text = text,
-                TextColor3 = Solara.Settings.Theme.TextColor,
-                TextSize = 13,
-                AutoButtonColor = false
-            })
+        local Tab = {}
 
-            Create("UICorner", {
-                Parent = Button,
-                CornerRadius = UDim.new(0, 6)
-            })
+        -- Add elements functions here (Button, Toggle, etc.)
+        function Tab:Button(text, callback)
+            local Button = Instance.new("TextButton")
+            local ButtonCorner = Instance.new("UICorner")
 
-            MakeClickable(
-                Button, 
-                Solara.Settings.Theme.Primary, 
-                Solara.Settings.Theme.Primary:Lerp(Color3.new(1,1,1), 0.05),
-                ClickSound
-            )
+            Button.Name = text
+            Button.Parent = Container
+            Button.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+            Button.Size = UDim2.new(1, -10, 0, 30)
+            Button.Font = Enum.Font.Gotham
+            Button.Text = text
+            Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Button.TextSize = 14
+            Button.AutoButtonColor = false
+
+            ButtonCorner.CornerRadius = UDim.new(0, 5)
+            ButtonCorner.Parent = Button
+
+            Container.CanvasSize = UDim2.new(0, 0, 0, ContainerList.AbsoluteContentSize.Y + 5)
 
             Button.MouseButton1Click:Connect(function()
                 callback()
             end)
-            
-            return Button
         end
 
-        function Tab:CreateToggle(text, default, callback)
-            local Toggle = Create("Frame", {
-                Parent = TabContent,
-                BackgroundColor3 = Solara.Settings.Theme.Primary,
-                Size = UDim2.new(1, 0, 0, 32)
-            })
+        function Tab:Toggle(text, default, callback)
+            local Toggle = Instance.new("TextButton")
+            local ToggleCorner = Instance.new("UICorner")
+            local Status = Instance.new("Frame")
+            local StatusCorner = Instance.new("UICorner")
 
-            Create("UICorner", {
-                Parent = Toggle,
-                CornerRadius = UDim.new(0, 6)
-            })
+            Toggle.Name = text
+            Toggle.Parent = Container
+            Toggle.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+            Toggle.Size = UDim2.new(1, -10, 0, 30)
+            Toggle.Font = Enum.Font.Gotham
+            Toggle.Text = "  "..text
+            Toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Toggle.TextSize = 14
+            Toggle.TextXAlignment = Enum.TextXAlignment.Left
+            Toggle.AutoButtonColor = false
 
-            local ToggleButton = Create("TextButton", {
-                Parent = Toggle,
-                BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 1, 0),
-                Font = Enum.Font.GothamSemibold,
-                Text = text,
-                TextColor3 = Solara.Settings.Theme.TextColor,
-                TextSize = 13,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                TextTruncate = Enum.TextTruncate.AtEnd
-            })
+            ToggleCorner.CornerRadius = UDim.new(0, 5)
+            ToggleCorner.Parent = Toggle
 
-            Create("UIPadding", {
-                Parent = ToggleButton,
-                PaddingLeft = UDim.new(0, 10)
-            })
+            Status.Name = "Status"
+            Status.Parent = Toggle
+            Status.AnchorPoint = Vector2.new(1, 0.5)
+            Status.BackgroundColor3 = default and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+            Status.Position = UDim2.new(1, -5, 0.5, 0)
+            Status.Size = UDim2.new(0, 20, 0, 20)
 
-            local ToggleIndicator = Create("Frame", {
-                Parent = Toggle,
-BackgroundColor3 = default and Solara.Settings.Theme.Accent or Solara.Settings.Theme.Primary,
-                Position = UDim2.new(1, -42, 0.5, -10),
-                Size = UDim2.new(0, 32, 0, 20)
-            })
-
-            Create("UICorner", {
-                Parent = ToggleIndicator,
-                CornerRadius = UDim.new(1, 0)
-            })
-
-            local Circle = Create("Frame", {
-                Parent = ToggleIndicator,
-                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-                Position = default and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8),
-                Size = UDim2.new(0, 16, 0, 16)
-            })
-
-            Create("UICorner", {
-                Parent = Circle,
-                CornerRadius = UDim.new(1, 0)
-            })
+            StatusCorner.CornerRadius = UDim.new(0, 5)
+            StatusCorner.Parent = Status
 
             local toggled = default
-            ToggleButton.MouseButton1Click:Connect(function()
+
+            Container.CanvasSize = UDim2.new(0, 0, 0, ContainerList.AbsoluteContentSize.Y + 5)
+
+            Toggle.MouseButton1Click:Connect(function()
                 toggled = not toggled
-                
-                if toggled then
-                    CreateTween(ToggleIndicator, {BackgroundColor3 = Solara.Settings.Theme.Accent}):Play()
-                    CreateTween(Circle, {Position = UDim2.new(1, -18, 0.5, -8)}):Play()
-                else
-                    CreateTween(ToggleIndicator, {BackgroundColor3 = Solara.Settings.Theme.Primary}):Play()
-                    CreateTween(Circle, {Position = UDim2.new(0, 2, 0.5, -8)}):Play()
-                end
-                
-                if Solara.Settings.UseSound then
-                    ClickSound:Play()
-                end
-                
+                Status.BackgroundColor3 = toggled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
                 callback(toggled)
             end)
-            
-            return Toggle
-        end
-
-        function Tab:CreateSlider(text, min, max, default, callback)
-            local Slider = Create("Frame", {
-                Parent = TabContent,
-                BackgroundColor3 = Solara.Settings.Theme.Primary,
-                Size = UDim2.new(1, 0, 0, 50)
-            })
-
-            Create("UICorner", {
-                Parent = Slider,
-                CornerRadius = UDim.new(0, 6)
-            })
-
-            local Title = Create("TextLabel", {
-                Parent = Slider,
-                BackgroundTransparency = 1,
-                Position = UDim2.new(0, 10, 0, 5),
-                Size = UDim2.new(1, -20, 0, 20),
-                Font = Enum.Font.GothamSemibold,
-                Text = text,
-                TextColor3 = Solara.Settings.Theme.TextColor,
-                TextSize = 13,
-                TextXAlignment = Enum.TextXAlignment.Left
-            })
-
-            local Value = Create("TextLabel", {
-                Parent = Slider,
-                BackgroundTransparency = 1,
-                Position = UDim2.new(1, -60, 0, 5),
-                Size = UDim2.new(0, 50, 0, 20),
-                Font = Enum.Font.GothamSemibold,
-                Text = tostring(default),
-                TextColor3 = Solara.Settings.Theme.TextColor,
-                TextSize = 13,
-                TextXAlignment = Enum.TextXAlignment.Right
-            })
-
-            local SliderBar = Create("Frame", {
-                Parent = Slider,
-                BackgroundColor3 = Solara.Settings.Theme.Secondary,
-                Position = UDim2.new(0, 10, 0, 35),
-                Size = UDim2.new(1, -20, 0, 5)
-            })
-
-            Create("UICorner", {
-                Parent = SliderBar,
-                CornerRadius = UDim.new(1, 0)
-            })
-
-            local Fill = Create("Frame", {
-                Parent = SliderBar,
-                BackgroundColor3 = Solara.Settings.Theme.Accent,
-                Size = UDim2.new((default - min)/(max - min), 0, 1, 0)
-            })
-
-            Create("UICorner", {
-                Parent = Fill,
-                CornerRadius = UDim.new(1, 0)
-            })
-
-            local dragging = false
-            SliderBar.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    dragging = true
-                end
-            end)
-
-            UserInputService.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    dragging = false
-                end
-            end)
-
-            UserInputService.InputChanged:Connect(function(input)
-                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                    local pos = UDim2.new(math.clamp((input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1), 0, 1, 0)
-                    Fill.Size = pos
-                    local value = math.floor(min + ((max - min) * pos.X.Scale))
-                    Value.Text = tostring(value)
-                    callback(value)
-                end
-            end)
-            
-            return Slider
-        end
-
-        function Tab:CreateDropdown(text, options, default, callback)
-            local Dropdown = Create("Frame", {
-                Parent = TabContent,
-                BackgroundColor3 = Solara.Settings.Theme.Primary,
-                ClipsDescendants = true,
-                Size = UDim2.new(1, 0, 0, 32)
-            })
-
-            Create("UICorner", {
-                Parent = Dropdown,
-                CornerRadius = UDim.new(0, 6)
-            })
-
-            local DropdownButton = Create("TextButton", {
-                Parent = Dropdown,
-                BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 32),
-                Font = Enum.Font.GothamSemibold,
-                Text = text .. ": " .. tostring(default),
-                TextColor3 = Solara.Settings.Theme.TextColor,
-                TextSize = 13
-            })
-
-            local OptionContainer = Create("Frame", {
-                Parent = Dropdown,
-                BackgroundTransparency = 1,
-                Position = UDim2.new(0, 0, 0, 32),
-                Size = UDim2.new(1, 0, 0, #options * 32)
-            })
-
-            local isOpen = false
-            local function toggleDropdown()
-                isOpen = not isOpen
-                local size = isOpen and UDim2.new(1, 0, 0, 32 + (#options * 32)) or UDim2.new(1, 0, 0, 32)
-                CreateTween(Dropdown, {Size = size}):Play()
-            end
-
-            DropdownButton.MouseButton1Click:Connect(toggleDropdown)
-
-            for i, option in pairs(options) do
-                local OptionButton = Create("TextButton", {
-                    Parent = OptionContainer,
-                    BackgroundColor3 = Solara.Settings.Theme.Secondary,
-                    Position = UDim2.new(0, 0, 0, (i-1) * 32),
-                    Size = UDim2.new(1, 0, 0, 32),
-                    Font = Enum.Font.GothamSemibold,
-                    Text = tostring(option),
-                    TextColor3 = Solara.Settings.Theme.TextColor,
-                    TextSize = 13
-                })
-
-                Create("UICorner", {
-                    Parent = OptionButton,
-                    CornerRadius = UDim.new(0, 6)
-                })
-
-                OptionButton.MouseButton1Click:Connect(function()
-                    DropdownButton.Text = text .. ": " .. tostring(option)
-                    toggleDropdown()
-                    callback(option)
-                    
-                    if Solara.Settings.UseSound then
-                        ClickSound:Play()
-                    end
-                end)
-            end
-            
-            return Dropdown
-        end
-
-        -- Select first tab by default
-        if #TabContainer:GetChildren() == 2 then
-            TabButton.BackgroundColor3 = Solara.Settings.Theme.Accent
-            TabButton.TextColor3 = Solara.Settings.Theme.TextColor
-            TabContent.Visible = true
         end
 
         return Tab
     end
-
-    -- Show window with animation
-    CreateTween(Blur, {Size = 10}):Play()
     
     return Window
 end
 
-return Solara
+return Library
