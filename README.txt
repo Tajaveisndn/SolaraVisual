@@ -1,9 +1,4 @@
---[[
-    SolaraUI Library - Combined Parts
-    Authors: ny0xdel4s and fearqwzz_
-    Discord: https://discord.gg/p6HsBPFkc7
-    Version: 2.0.0
-]]
+
 
 -- Services
 local TweenService = game:GetService("TweenService")
