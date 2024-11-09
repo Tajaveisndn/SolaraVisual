@@ -182,7 +182,7 @@ function lib:Window(text, preset, closebind)
     end
 
     function lib:Destroy()
-        for _, item in pairs(TabFolder:GetChildren()) do 
+        for _, item in pairs(Main:GetChildren()) do 
             item:Destroy()
         end
     end
