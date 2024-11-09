@@ -1,4 +1,9 @@
-
+--[[
+    SolaraUI Library
+    Author: Nyox
+    Description: Uma moderna e profissional UI library para Roblox exploits
+    Version: 1.0.0
+]]
 
 -- Services
 local TweenService = game:GetService("TweenService")
